@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>TodoList</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <h2>TodoList</h2>
+    <form name="todoForm">
+        <input type="hidden" name="id" value="0" />
+        <div class="form-group">
+            <label for="name">Имя:</label>
+            <input class="form-control" name="name" />
+        </div>
+        <div class="form-group">
+            <label for="description">Описание:</label>
+            <input class="form-control" name="description" />
+        </div>
+        <div class="panel-body">
+            <button type="submit" class="btn btn-sm btn-primary">Сохранить</button>
+            <button type="button" id="resetBtn" class="btn btn-sm btn-primary">Сбросить</button>
+        </div>
+    </form>
+    <table class="table table-condensed table-striped table-bordered">
+        <thead><tr><th>Id</th><th>Наименование</th><th>Описание</th><th></th></tr></thead>
+        <tbody>
+        </tbody>
+    </table>
+   
+    <script>
+    // Получение списка
+        async function GetTodoList() {
+            let rows = document.querySelector("tbody"); 
+            rows.innerHTML = "";
+            // отправляет запрос и получаем ответ
+            const response = await fetch("/api/TodoList", {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            // если запрос прошел нормально
+            if (response.ok === true) {
+                // получаем данные
+                const todos = await response.json();
+                let rows = document.querySelector("tbody"); 
+                todos.forEach(todo => {
+                    // добавляем полученные элементы в таблицу
+                    rows.append(row(todo));
+                });
+            }
+        }
+        // Получение одного элемента
+        async function GetTodo(id) {
+            const response = await fetch("/api/TodoList/" + id, {
+                method: "GET",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const todo = await response.json();
+                const form = document.forms["todoForm"];
+                form.elements["id"].value = todo._id;
+                form.elements["name"].value = todo.name;
+                form.elements["description"].value = todo.description;
+            }
+        }
+        // Добавление
+        async function CreateTodo(nameT, descriptionT) {
+  
+            const response = await fetch("api/TodoList/create", {
+                method: "POST",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: nameT,
+                    description: descriptionT
+                })
+            });
+            if (response.ok === true) {
+                const todo = await response.json();
+                resetButton();
+                document.querySelector("tbody").append(row(todo));
+            }
+        }
+        // Изменение
+        async function EditTodo(todoId, todoName, todoDesc) {
+            const response = await fetch("api/TodoList/update", {
+                method: "PUT",
+                headers: { "Accept": "application/json", "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    id: todoId,
+                    name: todoName,
+                    description: todoDesc
+                })
+            });
+            if (response.ok === true) {
+                const todo = await response.json();
+                resetButton();
+                document.querySelector("tr[data-rowid='" + todo._id + "']").replaceWith(row(todo));
+            }
+        }
+        // Удаление
+        async function DeleteTodo(id) {
+            const response = await fetch("/api/TodoList/" + id, {
+                method: "DELETE",
+                headers: { "Accept": "application/json" }
+            });
+            if (response.ok === true) {
+                const todo = await response.json();
+                document.querySelector("tr[data-rowid='" + todo._id + "']").remove();
+            }
+        }
+  
+        // сброс формы
+        function resetButton() {
+            const form = document.forms["todoForm"];
+            form.reset();
+            console.log(form.elements["id"].value);
+            form.elements["id"].value = 0;
+        }
+        // создание строки для таблицы
+        function row(todo) {
+  
+            const tr = document.createElement("tr");
+            tr.setAttribute("data-rowid", todo._id);
+  
+            const idTd = document.createElement("td");
+            idTd.append(todo._id);
+            tr.append(idTd);
+  
+            const nameTd = document.createElement("td");
+            nameTd.append(todo.name);
+            tr.append(nameTd);
+  
+            const ageTd = document.createElement("td");
+            ageTd.append(todo.description);
+            tr.append(ageTd);
+              
+            const linksTd = document.createElement("td");
+  
+            const editLink = document.createElement("a");
+            editLink.setAttribute("data-id", todo._id);
+            editLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            editLink.append("Изменить");
+            editLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                GetTodo(todo._id);
+            });
+            linksTd.append(editLink);
+  
+            const removeLink = document.createElement("a");
+            removeLink.setAttribute("data-id", todo._id);
+            removeLink.setAttribute("style", "cursor:pointer;padding:15px;");
+            removeLink.append("Удалить");
+            removeLink.addEventListener("click", e => {
+  
+                e.preventDefault();
+                DeleteTodo(todo._id);
+            });
+  
+            linksTd.append(removeLink);
+            tr.appendChild(linksTd);
+  
+            return tr;
+        }
+        // сброс значений формы
+        let resetBtn = document.getElementById("resetBtn");
+        resetBtn.addEventListener('click', function() {
+            resetButton();
+        });
+  
+        // отправка формы
+        document.forms["todoForm"].addEventListener("submit", e => {
+            e.preventDefault();
+            const form = document.forms["todoForm"];
+            const id = form.elements["id"].value;
+            const name = form.elements["name"].value;
+            const description = form.elements["description"].value;
+            if (id == 0)
+                CreateTodo(name, description);
+            else
+                EditTodo(id, name, description);
+
+            GetTodoList();
+        });
+  
+        // загрузка списка
+        GetTodoList();
+    </script>
+</body>
+</html>

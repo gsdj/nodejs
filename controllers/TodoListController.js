@@ -23,7 +23,10 @@ exports.delTodo = function(req,res) {
     TodoModel.findOneAndDelete({_id:id}, function(err, doc){
          
         if(err) return console.log(err);
-         res.send(doc);
+        TodoModel.find({}, function(err, list){
+            if(err) return console.log(err);
+            res.send(list)
+        });
         console.log("Удален ", doc);
     });
 };

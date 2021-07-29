@@ -1,4 +1,5 @@
 const express = require("express");
+const cors = require('cors');
 const fs = require('fs');
 const filePath = "files/users.json";
 const config = require('./libs/config.js');
@@ -9,7 +10,7 @@ const jsonParser = express.json();
 
 app.use(express.static(__dirname + "/public"));
 
-
+app.use(cors());
 
 const userController = require("./controllers/usersController");
 const TodoListController = require("./controllers/TodoListController");
